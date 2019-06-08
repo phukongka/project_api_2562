@@ -7,7 +7,7 @@ const storage = multer.diskStorage({
     cb(null, './public/files/img/teachers')
   },
   filename: function (req, file, cb) {
-    cb(null, "veh-t" + '-' + Date.now()+".jpg")
+    cb(null, "ctc-t" + '-' + Date.now()+".jpg")
   }
 })
 
@@ -20,7 +20,7 @@ router.get('/', async (req,res)=>{
 })
 router.get('/list', async (req, res) => {
   try {
-    let rows = await req.db('pk_teacher').select('*').where("t_Status","!=",0)
+    let rows = await req.db('teacher').select('*').where("t_Status","!=",0)
     res.send({
       ok: true,
       datas: rows,
@@ -34,28 +34,28 @@ router.get("/sh_teacher/:t_id",async(req,res)=>{
   console.log('param='+req.params.t_id)
   try{
     let db = req.db
-    let row = await db('pk_teacher').select(
-      "pk_teacher.t_id",
-      "pk_teacher.t_code",
-      "pk_teacher.t_name",
-      "pk_teacher.t_dep",
-      "pk_teacher.t_tel",
-      "pk_teacher.t_username",
-      "pk_teacher.t_password",
-      "pk_teacher.t_status",
-      "pk_department.d_name",
-      "pk_group.g_name",
+    let row = await db('teacher').select(
+      "teacher.t_id",
+      "teacher.t_code",
+      "teacher.t_name",
+      "teacher.t_dep",
+      "teacher.t_tel",
+      "teacher.t_username",
+      "teacher.t_password",
+      "teacher.t_status",
+      "department.d_name",
+      "group.g_name",
 
     )
-    .innerJoin('pk_department', 'pk_teacher.t_dep', 'pk_department.d_code')
-    .innerJoin('pk_group', 'pk_group.d_code', 'pk_department.d_code')
+    .innerJoin('department', 'teacher.t_dep', 'department.d_code')
+    .innerJoin('group', 'group.d_code', 'department.d_code')
 
     .where({
       t_id: req.params.t_id
     })
     console.log("row[0].t_id")
     console.log(row[0].t_id)
-    let img=await db("pk_img").select("*").where("u_code","=",row[0].t_id).where("u_table","pk_teacher")
+    let img=await db("img").select("*").where("u_code","=",row[0].t_id).where("u_table","teacher")
     console.log(row)
     console.log(img)
     res.send({
@@ -70,7 +70,7 @@ router.get("/sh_teacher/:t_id",async(req,res)=>{
 ////////////////////////////  select t_id ///////////////////////////////
 router.post('/t_id', async (req, res) => {
   try {
-    let rows = await req.db('pk_teacher').select('*').where("t_status","!=","0")
+    let rows = await req.db('teacher').select('*').where("t_status","!=","0")
     .where("t_code","like",'%'+req.body.t_code+'%')
     res.send({
       ok: true,
@@ -81,30 +81,31 @@ router.post('/t_id', async (req, res) => {
   }
 })
 router.post("/teacher_add",upload.any(),async (req,res)=>{
+  console.log('teacher',req.body)
   try{
     let db=req.db
-    let chk_teacher=await db("pk_teacher").where("t_code",req.body.t_code)
+    let chk_teacher=await db("teacher").where("teacher_code",req.body.teacher)
     if(chk_teacher.length==0){
-      let t_id=await req.db("pk_teacher").insert({
-        	t_code:req.body.t_code,
-          t_name:req.body.t_name,
+      let t_id=await req.db("teacher").insert({
+        teacher_code:req.body.t_code,
+        teacher_name:req.body.t_name,
           t_dep:req.body.t_dep,
-          t_tel:req.body.t_tel,
-        	t_username:req.body.t_code,
-        	t_password:req.body.t_tel
+          teacher_tel:req.body.t_tel,
+        	//t_username:req.body.t_code,
+        	teacher_password:req.body.t_tel
       })
-      var cv_str=req.body.mst_1
-      var sp=cv_str.split(",")
-      for(i=1;i<sp.length;i++){
-        let pk_match_std_tch=await req.db("pk_match_std_tch").insert({
-          t_id:t_id,
-          g_code:sp[i]
-        })
-      }
+      // var cv_str=req.body.mst_1
+      // var sp=cv_str.split(",")
+      // for(i=1;i<sp.length;i++){
+      //   let match_std_tch=await req.db("match_std_tch").insert({
+      //     t_id:t_id,
+      //     g_code:sp[i]
+      //   })
+      // }
 
       if(req.files.length==0){
-        let img=await req.db("pk_img").insert({
-            img_img:"veh-u-default.jpg",
+        let img=await req.db("img").insert({
+            img_img:"ctc-u-default.jpg",
             u_table:req.body.u_table,
             u_code:t_id,
         })
@@ -112,7 +113,7 @@ router.post("/teacher_add",upload.any(),async (req,res)=>{
       }
       else{
         for(let i=0;i<req.files.length;i++){
-          let img=await req.db("pk_img").insert({
+          let img=await req.db("img").insert({
               img_img:req.files[i].filename,
               u_table:req.body.u_table,
               u_code:t_id,
@@ -120,7 +121,7 @@ router.post("/teacher_add",upload.any(),async (req,res)=>{
 
         }
       }
-      let log=await req.db("pk_teacher_log").insert({
+      let log=await req.db("teacher_log").insert({
         t_id:t_id,
         t_code:req.body.t_code,
         t_name:req.body.t_name,
@@ -143,10 +144,10 @@ router.post("/teacher_add",upload.any(),async (req,res)=>{
 
 router.post("/teacher_del",async (req,res)=>{//console.log(req.params.t_id)
   try{
-    let t_id=await req.db("pk_teacher").update({t_status:"0"}).where({
+    let t_id=await req.db("teacher").update({t_status:"0"}).where({
       t_id:req.body.t_id
     })
-    let log=await req.db("pk_teacher_log").insert({
+    let log=await req.db("teacher_log").insert({
         t_id:req.body.t_id,
       	t_code:req.body.t_code,
         t_name:req.body.t_name,
@@ -164,7 +165,7 @@ router.post("/teacher_del",async (req,res)=>{//console.log(req.params.t_id)
 //////////////////////// search ///////////////////////////////
 router.post('/search/', async (req, res) => {
   try {
-    let rows = await req.db('pk_teacher').select('*').orderBy("pk_teacher.t_id","desc")
+    let rows = await req.db('teacher').select('*').orderBy("teacher.t_id","desc")
     .where("t_status","!=",0)
     .where("t_name","like",'%'+req.body.txt_search+'%')
     .orWhere("t_code","like",'%'+req.body.txt_search+'%')
@@ -180,7 +181,7 @@ router.post('/search/', async (req, res) => {
 ///////////////////////////////////////////////////////////////
 router.post("/teacher_update",upload.any(),async(req,res)=>{//console.log(req.body.t_id)
   try{
-    let sql=await req.db("pk_teacher").update({
+    let sql=await req.db("teacher").update({
         t_code:req.body.t_code,
         t_name:req.body.t_name,
         t_tel:req.body.t_tel,
@@ -193,23 +194,23 @@ router.post("/teacher_update",upload.any(),async(req,res)=>{//console.log(req.bo
       var cv_str=req.files[i].fieldname
       var sp=cv_str.split("-")
       let sel=sp[1]
-      let img=await req.db("pk_img").update({
+      let img=await req.db("img").update({
         	img_img:req.files[i].filename,
       }).where("img_id","=",sel)
     }
-    // let pk_match_std_tch1=await req.db("pk_match_std_tch").update({
+    // let match_std_tch1=await req.db("match_std_tch").update({
     //   t_id:req.body.t_code,
     //   g_code:req.body.mst_1
     // }).where({t_id:req.body.t_code})
-    // let pk_match_std_tch2=await req.db("pk_match_std_tch").update({
+    // let match_std_tch2=await req.db("match_std_tch").update({
     //   t_id:req.body.t_code,
     //   g_code:req.body.mst_2
     // }).where({t_id:req.body.t_code})
-    // let pk_match_std_tch3=await req.db("pk_match_std_tch").update({
+    // let match_std_tch3=await req.db("match_std_tch").update({
     //   t_id:req.body.t_code,
     //   g_code:req.body.mst_3
     // }).where({t_id:req.body.t_code})
-    let log=await req.db("pk_teacher_log").insert({
+    let log=await req.db("teacher_log").insert({
         t_id:req.body.t_id,
       	t_code:req.body.t_code,
         t_name:req.body.t_name,
@@ -260,22 +261,22 @@ router.post('/restore', async (req, res) => {
 router.post('/sh_profile', async (req, res) => {
   try {
     let db = req.db
-    let row = await db('pk_teacher').select(
-      "pk_teacher.t_id",
-      "pk_teacher.t_code",
-      "pk_teacher.t_name",
-      "pk_teacher.t_dep",
-      "pk_teacher.t_tel",
-      "pk_teacher.t_username",
-      "pk_teacher.t_password",
-      "pk_teacher.t_status",
+    let row = await db('teacher').select(
+      "teacher.t_id",
+      "teacher.t_code",
+      "teacher.t_name",
+      "teacher.t_dep",
+      "teacher.t_tel",
+      "teacher.t_username",
+      "teacher.t_password",
+      "teacher.t_status",
     )
     .where({
       t_id: req.body.id
     })
     // console.log("row[0].t_id")
     // console.log(row[0].t_id)
-    let img=await db("pk_img").select("*").where("u_code","=",row[0].t_id).where("u_table","pk_teacher")
+    let img=await db("img").select("*").where("u_code","=",row[0].t_id).where("u_table","teacher")
     // console.log(row)
     // console.log(img)
     res.send({
@@ -290,7 +291,7 @@ router.post('/sh_profile', async (req, res) => {
 
 router.post("/profile_update",upload.any(),async(req,res)=>{
   try{
-    let sql=await req.db("pk_teacher").update({
+    let sql=await req.db("teacher").update({
         t_name:req.body.t_name,
         t_tel:req.body.t_tel,
     }).where({
@@ -300,7 +301,7 @@ router.post("/profile_update",upload.any(),async(req,res)=>{
       var cv_str=req.files[i].fieldname
       var sp=cv_str.split("-")
       let sel=sp[1]
-      let img=await req.db("pk_img").update({
+      let img=await req.db("img").update({
         	img_img:req.files[i].filename,
       }).where("img_id","=",sel)
     }
@@ -311,12 +312,12 @@ router.post("/profile_update",upload.any(),async(req,res)=>{
 router.post("/security_update",async(req,res)=>{
   try{
     if(req.body.cv_set==="username"){
-        let sql=await req.db("pk_teacher").update({
+        let sql=await req.db("teacher").update({
             t_username:req.body.t_username
         }).where({t_id:req.body.t_id})
     }
     else if(req.body.cv_set==="password"){
-        let sql=await req.db("pk_teacher").update({
+        let sql=await req.db("teacher").update({
             t_password:req.body.t_password
         }).where({t_id:req.body.t_id})
     }
