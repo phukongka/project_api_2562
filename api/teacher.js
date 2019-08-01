@@ -20,7 +20,7 @@ router.get('/', async (req,res)=>{
 })
 router.get('/list', async (req, res) => {
   try {
-    let rows = await req.db('teacher').select('*').where("t_Status","!=",0)
+    let rows = await req.db('teacher')
     res.send({
       ok: true,
       datas: rows,
@@ -35,33 +35,33 @@ router.get("/sh_teacher/:t_id",async(req,res)=>{
   try{
     let db = req.db
     let row = await db('teacher').select(
-      "teacher.t_id",
-      "teacher.t_code",
-      "teacher.t_name",
-      "teacher.t_dep",
-      "teacher.t_tel",
-      "teacher.t_username",
-      "teacher.t_password",
-      "teacher.t_status",
-      "department.d_name",
-      "group.g_name",
+      "teacher.teacher_id",
+      "teacher.teacher_code",
+      "teacher.teacher_name",
+      "teacher.d_code",
+      "teacher.teacher_tel",
+      // "teacher.t_username",
+      // "teacher.t_password",
+      // "teacher.t_status",
+      // "department.d_name",
+      // "group.g_name",
 
     )
-    .innerJoin('department', 'teacher.t_dep', 'department.d_code')
-    .innerJoin('group', 'group.d_code', 'department.d_code')
+    // .innerJoin('department', 'teacher.t_dep', 'department.d_code')
+    // .innerJoin('group', 'group.d_code', 'department.d_code')
 
     .where({
-      t_id: req.params.t_id
+      teacher_code: req.params.t_id
     })
     console.log("row[0].t_id")
     console.log(row[0].t_id)
-    let img=await db("img").select("*").where("u_code","=",row[0].t_id).where("u_table","teacher")
-    console.log(row)
-    console.log(img)
+    // let img=await db("img").select("*").where("u_code","=",row[0].t_id).where("u_table","teacher")
+    // console.log(row)
+    // console.log(img)
     res.send({
       ok:true,
       datas: row || {},
-      image:img
+     // image:img
     })
   }catch(e){
     res.send({ok:false,error:e.message})

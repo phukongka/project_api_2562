@@ -99,7 +99,7 @@ router.post("/signin", async (req, res) => {
  console.log('insert=>',req.body)
   let id = await db("work_time").insert({
     person_id: req.body.user,
-    start_time: req.body.start_time,
+   // start_time: req.body.start_time,
     date_in: req.body.date_in,
     status: req.body.status,
     // status: rows[0].status
